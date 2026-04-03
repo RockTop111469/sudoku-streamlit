@@ -28,9 +28,9 @@ def train_printed_digit_knn():
                     img = Image.new("L", (50, 50), 255)
                     draw = ImageDraw.Draw(img)
                     try:
-                    font = ImageFont.truetype(font_path, size)
+                        font = ImageFont.truetype(font_path, size)
                     except:
-                    font = ImageFont.load_default()
+                        font = ImageFont.load_default()
 
                     #font = ImageFont.truetype(font_path, size)
 
