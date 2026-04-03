@@ -2,29 +2,27 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.datasets import fetch_openml
 
 # ============================================================
-# 1. KNN モデルを自動生成（Tesseract 不要）
+# 1. MNIST を使って KNN モデルを自動生成（Tesseract不要・digits.png不要）
 # ============================================================
 @st.cache_resource
 def train_knn_model():
-    # OpenCV の digits.png（手書き数字データ）を読み込む
-    digits_img = cv2.imread(cv2.samples.findFile("digits.png"), cv2.IMREAD_GRAYSCALE)
+    st.write("MNIST をダウンロードして KNN を学習中…（初回のみ数秒）")
 
-    if digits_img is None:
-        raise FileNotFoundError("OpenCV の digits.png が見つかりません。")
+    # MNIST を取得（70,000枚の手書き数字）
+    mnist = fetch_openml('mnist_784', version=1, as_frame=False)
 
-    # 50×100 のグリッド → 5000個の数字
-    cells = [np.hsplit(row, 100) for row in np.vsplit(digits_img, 50)]
-    x = np.array(cells).reshape(-1, 400).astype(np.float32)
-
-    # ラベル（0〜9 を 500 回ずつ）
-    y = np.repeat(np.arange(10), 500)[:, np.newaxis]
+    X = mnist.data.astype(np.float32)
+    y = mnist.target.astype(np.int32)
 
     # KNN モデル作成
-    knn = cv2.ml.KNearest_create()
-    knn.train(x, cv2.ml.ROW_SAMPLE, y)
+    knn = KNeighborsClassifier(n_neighbors=3)
+    knn.fit(X, y)
 
+    st.write("MNIST KNN モデル準備完了！")
     return knn
 
 
@@ -34,7 +32,7 @@ def train_knn_model():
 def knn_predict_digit(knn, cell_img):
     gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
 
-    # 数字部分を強調
+    # 数字を強調
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
     gray = cv2.adaptiveThreshold(
         gray, 255,
@@ -43,15 +41,14 @@ def knn_predict_digit(knn, cell_img):
         11, 2
     )
 
-    # 20×20 にリサイズ（MNIST互換）
-    resized = cv2.resize(gray, (20, 20))
-    sample = resized.reshape(1, 400).astype(np.float32)
+    # MNIST と同じ 28×28 に変換
+    resized = cv2.resize(gray, (28, 28))
+    sample = resized.reshape(1, -1).astype(np.float32)
 
-    ret, result, neighbours, dist = knn.findNearest(sample, k=5)
-    digit = int(result[0][0])
+    digit = knn.predict(sample)[0]
 
     # 0 は「空白」として扱う
-    return digit if digit != 0 else 0
+    return int(digit) if int(digit) != 0 else 0
 
 
 # ============================================================
@@ -187,11 +184,9 @@ def solve(board):
 # ============================================================
 # 6. Streamlit UI
 # ============================================================
-st.title("ナンプレソルバー（OpenCV KNN OCR版・完全自動）")
+st.title("ナンプレソルバー（MNIST KNN OCR版・完全自動）")
 
-st.write("🔧 KNN OCR モデルを準備中…（初回のみ数秒）")
 knn = train_knn_model()
-st.success("KNN モデル準備完了！")
 
 uploaded_file = st.file_uploader("ナンプレ画像をアップロード", type=["jpg", "jpeg", "png"])
 
@@ -218,5 +213,3 @@ if uploaded_file is not None:
                 st.table(board)
             else:
                 st.error("解けませんでした。")
-
-                
