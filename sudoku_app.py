@@ -34,8 +34,10 @@ def train_printed_digit_knn():
 
                     #font = ImageFont.truetype(font_path, size)
 
-                    # 中央に描画
-                    w, h = draw.textsize(str(num), font=font)
+                  # 中央に描画（Pillow 10 対応）
+                    bbox = draw.textbbox((0, 0), str(num), font=font)
+                    w = bbox[2] - bbox[0]
+                    h = bbox[3] - bbox[1]
                     draw.text(((50 - w) / 2, (50 - h) / 2), str(num), font=font, fill=0)
 
                     # OpenCV 形式に変換
