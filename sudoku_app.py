@@ -6,50 +6,42 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.datasets import fetch_openml
 
 # ============================================================
-# 1. MNIST を使って KNN モデルを自動生成（Tesseract不要・digits.png不要）
+# 1. MNIST を使って KNN モデルを自動生成
 # ============================================================
 @st.cache_resource
 def train_knn_model():
     st.write("MNIST をダウンロードして KNN を学習中…（初回のみ数秒）")
 
-    # MNIST を取得（70,000枚の手書き数字）
     mnist = fetch_openml('mnist_784', version=1, as_frame=False)
-
     X = mnist.data.astype(np.float32)
     y = mnist.target.astype(np.int32)
 
-    # KNN モデル作成
     knn = KNeighborsClassifier(n_neighbors=3)
     knn.fit(X, y)
 
     st.write("MNIST KNN モデル準備完了！")
     return knn
 
-
 # ============================================================
-# 2. KNN で数字を予測
+# 2. KNN で数字を予測（マス中央を強調）
 # ============================================================
 def knn_predict_digit(knn, cell_img):
     gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
 
-    # 数字を強調
+    # 軽くぼかしてノイズ除去
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
-    gray = cv2.adaptiveThreshold(
-        gray, 255,
-        cv2.ADAPTIVE_THRESH_MEAN_C,
-        cv2.THRESH_BINARY_INV,
-        11, 2
-    )
+
+    # 自前の二値化（本の印刷向けに少し甘め）
+    _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # MNIST と同じ 28×28 に変換
-    resized = cv2.resize(gray, (28, 28))
+    resized = cv2.resize(th, (28, 28))
     sample = resized.reshape(1, -1).astype(np.float32)
 
     digit = knn.predict(sample)[0]
+    digit = int(digit)
 
-    # 0 は「空白」として扱う
-    return int(digit) if int(digit) != 0 else 0
-
+    return digit if digit != 0 else 0
 
 # ============================================================
 # 3. 盤面抽出（射影変換）
@@ -58,7 +50,7 @@ def extract_board_image(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    thresh = cv2.adaptiveThreshold(
+    th = cv2.adaptiveThreshold(
         blur, 255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV,
@@ -66,7 +58,7 @@ def extract_board_image(img):
     )
 
     contours, _ = cv2.findContours(
-        thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
     biggest = None
@@ -105,23 +97,30 @@ def extract_board_image(img):
     matrix = cv2.getPerspectiveTransform(ordered, dst)
     warped = cv2.warpPerspective(img, matrix, (side, side))
 
+    # 念のため正方形にリサイズ
+    warped = cv2.resize(warped, (450, 450))
+
     return warped
 
-
 # ============================================================
-# 4. 盤面を 9×9 に分割して KNN で数字を読む
+# 4. 盤面を 9×9 に分割して KNN で数字を読む（マス中央だけ切り出し）
 # ============================================================
 def extract_board_numbers(warped, knn):
     board = []
-    cell_size = warped.shape[0] // 9
+    h, w, _ = warped.shape
+    cell_h = h // 9
+    cell_w = w // 9
+
+    margin_h = cell_h // 6  # 上下を少し削る
+    margin_w = cell_w // 6  # 左右を少し削る
 
     for r in range(9):
         row = []
         for c in range(9):
-            y1 = r * cell_size
-            y2 = (r + 1) * cell_size
-            x1 = c * cell_size
-            x2 = (c + 1) * cell_size
+            y1 = r * cell_h + margin_h
+            y2 = (r + 1) * cell_h - margin_h
+            x1 = c * cell_w + margin_w
+            x2 = (c + 1) * cell_w - margin_w
 
             cell = warped[y1:y2, x1:x2]
             digit = knn_predict_digit(knn, cell)
@@ -129,7 +128,6 @@ def extract_board_numbers(warped, knn):
         board.append(row)
 
     return board
-
 
 # ============================================================
 # 5. Sudoku ソルバー
@@ -180,11 +178,10 @@ def solve(board):
 
     return False
 
-
 # ============================================================
 # 6. Streamlit UI
 # ============================================================
-st.title("ナンプレソルバー（MNIST KNN OCR版・完全自動）")
+st.title("ナンプレソルバー（MNIST KNN OCR版・盤面抽出改良）")
 
 knn = train_knn_model()
 
