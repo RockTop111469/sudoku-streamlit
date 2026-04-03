@@ -1,47 +1,84 @@
 import streamlit as st
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.datasets import fetch_openml
 
 # ============================================================
-# 1. MNIST を使って KNN モデルを自動生成
+# 1. 印刷数字を大量生成して KNN を学習（Tesseract不要・MNIST不要）
 # ============================================================
 @st.cache_resource
-def train_knn_model():
-    st.write("MNIST をダウンロードして KNN を学習中…（初回のみ数秒）")
+def train_printed_digit_knn():
+    st.write("印刷数字OCRモデルを生成中…（初回のみ5〜10秒）")
 
-    mnist = fetch_openml('mnist_784', version=1, as_frame=False)
-    X = mnist.data.astype(np.float32)
-    y = mnist.target.astype(np.int32)
+    digits = []
+    labels = []
 
+    # 使うフォント（Streamlit Cloud でも動く）
+    fonts = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    ]
+
+    # 0〜9 の数字を大量生成
+    for num in range(10):
+        for font_path in fonts:
+            for size in [28, 32, 36, 40]:
+                for blur in [0, 1, 2]:
+                    img = Image.new("L", (50, 50), 255)
+                    draw = ImageDraw.Draw(img)
+                    font = ImageFont.truetype(font_path, size)
+
+                    # 中央に描画
+                    w, h = draw.textsize(str(num), font=font)
+                    draw.text(((50 - w) / 2, (50 - h) / 2), str(num), font=font, fill=0)
+
+                    # OpenCV 形式に変換
+                    arr = np.array(img)
+
+                    # ぼかし
+                    if blur > 0:
+                        arr = cv2.GaussianBlur(arr, (3, 3), blur)
+
+                    # 二値化
+                    _, th = cv2.threshold(arr, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+                    # 28×28 に縮小（MNIST互換）
+                    resized = cv2.resize(th, (28, 28))
+
+                    digits.append(resized.reshape(-1))
+                    labels.append(num)
+
+    digits = np.array(digits).astype(np.float32)
+    labels = np.array(labels).astype(np.int32)
+
+    # KNN 学習
     knn = KNeighborsClassifier(n_neighbors=3)
-    knn.fit(X, y)
+    knn.fit(digits, labels)
 
-    st.write("MNIST KNN モデル準備完了！")
+    st.success("印刷数字OCRモデルの準備完了！")
     return knn
 
+
 # ============================================================
-# 2. KNN で数字を予測（マス中央を強調）
+# 2. KNN で数字を予測
 # ============================================================
 def knn_predict_digit(knn, cell_img):
     gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
 
-    # 軽くぼかしてノイズ除去
+    # ノイズ除去
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    # 自前の二値化（本の印刷向けに少し甘め）
+    # 二値化
     _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-    # MNIST と同じ 28×28 に変換
+    # 28×28 に変換
     resized = cv2.resize(th, (28, 28))
     sample = resized.reshape(1, -1).astype(np.float32)
 
     digit = knn.predict(sample)[0]
-    digit = int(digit)
+    return int(digit) if digit != 0 else 0
 
-    return digit if digit != 0 else 0
 
 # ============================================================
 # 3. 盤面抽出（射影変換）
@@ -97,13 +134,11 @@ def extract_board_image(img):
     matrix = cv2.getPerspectiveTransform(ordered, dst)
     warped = cv2.warpPerspective(img, matrix, (side, side))
 
-    # 念のため正方形にリサイズ
-    warped = cv2.resize(warped, (450, 450))
-
     return warped
 
+
 # ============================================================
-# 4. 盤面を 9×9 に分割して KNN で数字を読む（マス中央だけ切り出し）
+# 4. 盤面を 9×9 に分割して KNN で数字を読む
 # ============================================================
 def extract_board_numbers(warped, knn):
     board = []
@@ -111,8 +146,8 @@ def extract_board_numbers(warped, knn):
     cell_h = h // 9
     cell_w = w // 9
 
-    margin_h = cell_h // 6  # 上下を少し削る
-    margin_w = cell_w // 6  # 左右を少し削る
+    margin_h = cell_h // 6
+    margin_w = cell_w // 6
 
     for r in range(9):
         row = []
@@ -128,6 +163,7 @@ def extract_board_numbers(warped, knn):
         board.append(row)
 
     return board
+
 
 # ============================================================
 # 5. Sudoku ソルバー
@@ -178,12 +214,13 @@ def solve(board):
 
     return False
 
+
 # ============================================================
 # 6. Streamlit UI
 # ============================================================
-st.title("ナンプレソルバー（MNIST KNN OCR版・盤面抽出改良）")
+st.title("ナンプレソルバー（印刷数字OCRモデル版・完全自動）")
 
-knn = train_knn_model()
+knn = train_printed_digit_knn()
 
 uploaded_file = st.file_uploader("ナンプレ画像をアップロード", type=["jpg", "jpeg", "png"])
 
