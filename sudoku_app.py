@@ -27,7 +27,12 @@ def train_printed_digit_knn():
                 for blur in [0, 1, 2]:
                     img = Image.new("L", (50, 50), 255)
                     draw = ImageDraw.Draw(img)
+                    try:
                     font = ImageFont.truetype(font_path, size)
+                    except:
+                    font = ImageFont.load_default()
+
+                    #font = ImageFont.truetype(font_path, size)
 
                     # 中央に描画
                     w, h = draw.textsize(str(num), font=font)
