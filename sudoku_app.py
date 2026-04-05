@@ -27,18 +27,20 @@ def train_printed_digit_knn():
                 for blur in [0, 1, 2]:
                     img = Image.new("L", (50, 50), 255)
                     draw = ImageDraw.Draw(img)
+
                     try:
                         font = ImageFont.truetype(font_path, size)
                     except:
                         font = ImageFont.load_default()
 
-                    #font = ImageFont.truetype(font_path, size)
+                # Pillow 12 対応：文字サイズ取得
+                 bbox = font.getbbox(str(num))
+                 w = bbox[2] - bbox[0]
+                 h = bbox[3] - bbox[1]
 
-                  # 中央に描画（Pillow 10 対応）
-                    bbox = draw.textbbox((0, 0), str(num), font=font)
-                    w = bbox[2] - bbox[0]
-                    h = bbox[3] - bbox[1]
+                  # 中央に描画
                     draw.text(((50 - w) / 2, (50 - h) / 2), str(num), font=font, fill=0)
+
 
                     # OpenCV 形式に変換
                     arr = np.array(img)
