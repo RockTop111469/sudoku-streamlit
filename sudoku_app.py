@@ -73,12 +73,17 @@ def train_printed_digit_knn():
 # 2. KNN で数字を予測
 # ============================================================
 def knn_predict_digit(knn, cell_img):
+    # グレースケール
     gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
+
+    # ★ CLAHE（細い数字を濃くする）
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    gray = clahe.apply(gray)
 
     # ノイズ除去
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    # 二値化
+    # 二値化（数字が太くなっても残る）
     _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
     # 28×28 に変換
@@ -87,7 +92,6 @@ def knn_predict_digit(knn, cell_img):
 
     digit = knn.predict(sample)[0]
     return int(digit) if digit != 0 else 0
-
 
 # ============================================================
 # 3. 盤面抽出（射影変換）
