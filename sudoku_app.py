@@ -176,14 +176,22 @@ def extract_board_numbers(warped, knn):
             if r == 0 and c == 0:
                 st.image(cell, caption="最初の1マス", width=100)
 
-            # ★ ここから追加する部分（数字位置検出）
+            # ★ ここから追加（線を消して数字だけ残す処理）
             gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
+
+            # 軽い二値化
             _, th_small = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+            # ★ 太い線を消す（数字だけ残す）
+            kernel = np.ones((3,3), np.uint8)
+            th_small = cv2.erode(th_small, kernel, iterations=1)
+
+            # 黒いピクセルの座標を取得
             ys, xs = np.where(th_small > 0)
 
-            # ★ 最初の1マスだけデバッグ表示
+            # ★ デバッグ表示（最初の1マスだけ）
             if r == 0 and c == 0:
-                st.image(th_small, caption="最初の1マス（二値化・数字位置検出用）", width=100)
+               st.image(th_small, caption="最初の1マス（二値化・数字位置検出用）", width=100)
                 st.write(f"min_y={ys.min() if len(ys)>0 else 'なし'}, max_y={ys.max() if len(ys)>0 else 'なし'}")
                 st.write(f"min_x={xs.min() if len(xs)>0 else 'なし'}, max_x={xs.max() if len(xs)>0 else 'なし'}")
 
@@ -194,7 +202,6 @@ def extract_board_numbers(warped, knn):
             # ★ ここから先は元の処理
             digit = knn_predict_digit(knn, cell)
             row.append(digit)
-
         board.append(row)
 
     return board
