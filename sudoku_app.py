@@ -171,13 +171,30 @@ def extract_board_numbers(warped, knn):
             x2 = (c + 1) * cell_w - margin_w
 
             cell = warped[y1:y2, x1:x2]
-            # ★ 追加：最初の1マスだけ表示して確認
+
+            # ★ 最初の1マスだけ表示
             if r == 0 and c == 0:
                 st.image(cell, caption="最初の1マス", width=100)
-                st.image(cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY), caption="最初の1マス（gray）", width=100)
 
+            # ★ ここから追加する部分（数字位置検出）
+            gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
+            _, th_small = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            ys, xs = np.where(th_small > 0)
+
+            # ★ 最初の1マスだけデバッグ表示
+            if r == 0 and c == 0:
+                st.image(th_small, caption="最初の1マス（二値化・数字位置検出用）", width=100)
+                st.write(f"min_y={ys.min() if len(ys)>0 else 'なし'}, max_y={ys.max() if len(ys)>0 else 'なし'}")
+                st.write(f"min_x={xs.min() if len(xs)>0 else 'なし'}, max_x={xs.max() if len(xs)>0 else 'なし'}")
+
+            # ★ gray 表示（元のコード）
+            if r == 0 and c == 0:
+                st.image(gray, caption="最初の1マス（gray）", width=100)
+
+            # ★ ここから先は元の処理
             digit = knn_predict_digit(knn, cell)
             row.append(digit)
+
         board.append(row)
 
     return board
