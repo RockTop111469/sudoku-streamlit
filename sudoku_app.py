@@ -176,13 +176,13 @@ def extract_board_numbers(warped, knn):
             if r == 0 and c == 0:
                 st.image(cell, caption="最初の1マス", width=100)
 
-            # ★ ここから追加（線を消して数字だけ残す処理）
+            # ★ 数字位置検出（ここが今回の追加）
             gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
 
             # 軽い二値化
             _, th_small = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-            # ★ 太い線を消す（数字だけ残す）
+            # 太い線を消す（数字だけ残す）
             kernel = np.ones((3,3), np.uint8)
             th_small = cv2.erode(th_small, kernel, iterations=1)
 
@@ -191,16 +191,19 @@ def extract_board_numbers(warped, knn):
 
             # ★ デバッグ表示（最初の1マスだけ）
             if r == 0 and c == 0:
-               st.image(th_small, caption="最初の1マス（二値化・数字位置検出用）", width=100)
-               st.write(f"min_y={ys.min() if len(ys)>0 else 'なし'}, max_y={ys.max() if len(ys)>0 else 'なし'}")
-               st.write(f"min_x={xs.min() if len(xs)>0 else 'なし'}, max_x={xs.max() if len(xs)>0 else 'なし'}")
+                st.image(th_small, caption="最初の1マス（二値化・数字位置検出用）", width=100)
+                st.write(f"min_y={ys.min() if len(ys)>0 else 'なし'}, max_y={ys.max() if len(ys)>0 else 'なし'}")
+                st.write(f"min_x={xs.min() if len(xs)>0 else 'なし'}, max_x={xs.max() if len(xs)>0 else 'なし'}")
+                st.image(gray, caption="最初の1マス（gray）", width=100)
 
-            # ★ gray 表示（元のコード）
-            if r == 0 and c == 0:
-               st.image(gray, caption="最初の1マス（gray）", width=100)
+            # ★ 数字だけ切り出し（ここが今回の本命）
+            if len(ys) > 0 and len(xs) > 0:
+                digit_roi = cell[ys.min():ys.max(), xs.min():xs.max()]
+            else:
+                digit_roi = cell  # 何も見つからない場合は元のcell
 
-            # ★ ここから先は元の処理
-            digit = knn_predict_digit(knn, cell)
+            # ★ KNN に渡すのは cell ではなく digit_roi
+            digit = knn_predict_digit(knn, digit_roi)
             row.append(digit)
         board.append(row)
 
