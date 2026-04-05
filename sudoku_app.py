@@ -192,12 +192,12 @@ def extract_board_numbers(warped, knn):
             # ★ デバッグ表示（最初の1マスだけ）
             if r == 0 and c == 0:
                st.image(th_small, caption="最初の1マス（二値化・数字位置検出用）", width=100)
-                st.write(f"min_y={ys.min() if len(ys)>0 else 'なし'}, max_y={ys.max() if len(ys)>0 else 'なし'}")
-                st.write(f"min_x={xs.min() if len(xs)>0 else 'なし'}, max_x={xs.max() if len(xs)>0 else 'なし'}")
+               st.write(f"min_y={ys.min() if len(ys)>0 else 'なし'}, max_y={ys.max() if len(ys)>0 else 'なし'}")
+               st.write(f"min_x={xs.min() if len(xs)>0 else 'なし'}, max_x={xs.max() if len(xs)>0 else 'なし'}")
 
             # ★ gray 表示（元のコード）
             if r == 0 and c == 0:
-                st.image(gray, caption="最初の1マス（gray）", width=100)
+               st.image(gray, caption="最初の1マス（gray）", width=100)
 
             # ★ ここから先は元の処理
             digit = knn_predict_digit(knn, cell)
