@@ -167,6 +167,10 @@ def extract_board_numbers(warped, knn):
             x2 = (c + 1) * cell_w - margin_w
 
             cell = warped[y1:y2, x1:x2]
+            # ★ 追加：最初の1マスだけ表示して確認
+            if r == 0 and c == 0:
+                st.image(cell, caption="最初の1マス", width=100)
+
             digit = knn_predict_digit(knn, cell)
             row.append(digit)
         board.append(row)
