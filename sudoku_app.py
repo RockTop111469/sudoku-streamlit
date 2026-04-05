@@ -174,6 +174,7 @@ def extract_board_numbers(warped, knn):
             # ★ 追加：最初の1マスだけ表示して確認
             if r == 0 and c == 0:
                 st.image(cell, caption="最初の1マス", width=100)
+                st.image(cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY), caption="最初の1マス（gray）", width=100)
 
             digit = knn_predict_digit(knn, cell)
             row.append(digit)
