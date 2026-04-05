@@ -34,9 +34,9 @@ def train_printed_digit_knn():
                         font = ImageFont.load_default()
 
                 # Pillow 12 対応：文字サイズ取得
-                 bbox = font.getbbox(str(num))
-                 w = bbox[2] - bbox[0]
-                 h = bbox[3] - bbox[1]
+                    bbox = font.getbbox(str(num))
+                    w = bbox[2] - bbox[0]
+                    h = bbox[3] - bbox[1]
 
                   # 中央に描画
                     draw.text(((50 - w) / 2, (50 - h) / 2), str(num), font=font, fill=0)
