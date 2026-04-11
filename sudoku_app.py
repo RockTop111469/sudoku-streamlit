@@ -147,7 +147,7 @@ def show_solution(board):
 # メイン
 # -------------------------
 def main():
-    st.title("🧩 Sudoku Solver（3×3 ブロック間スペース版）")
+    st.title("🧩 ろっくとっぷ　のナンプレSolver）")
 
     board = input_board()
 
