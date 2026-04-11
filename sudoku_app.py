@@ -34,14 +34,14 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（columns＋CSSで罫線完全版）
+# 入力UI（セル完全囲み罫線）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄は0）")
 
     board = np.zeros((9, 9), dtype=int)
 
-    # CSS（罫線・色・中央寄せ）
+    # CSS（入力欄の中央寄せ・サイズ）
     st.markdown("""
         <style>
         .sudoku-input input {
@@ -64,42 +64,36 @@ def input_board():
     for r in range(9):
         cols = st.columns(9, gap="small")
         for c in range(9):
-            key = f"cell_{r}_{c}"
 
             # 枠線の太さを決める
             style = ""
 
-            # 横線
-            if r % 3 == 0:
-                style += "border-top: 3px solid black;"
-            else:
-                style += "border-top: 1px solid #999;"
+            # 上
+            style += "border-top: {} solid black;".format("3px" if r % 3 == 0 else "1px")
+            # 左
+            style += "border-left: {} solid black;".format("3px" if c % 3 == 0 else "1px")
+            # 下
+            style += "border-bottom: {} solid black;".format("3px" if r == 8 else "1px")
+            # 右
+            style += "border-right: {} solid black;".format("3px" if c == 8 else "1px")
 
-            # 縦線
-            if c % 3 == 0:
-                style += "border-left: 3px solid black;"
-            else:
-                style += "border-left: 1px solid #999;"
-
-            # 最終行・列の太線
-            if r == 8:
-                style += "border-bottom: 3px solid black;"
-            if c == 8:
-                style += "border-right: 3px solid black;"
+            key = f"cell_{r}_{c}"
 
             with cols[c]:
                 st.markdown(
                     f"<div class='cell-box' style='{style}'>",
                     unsafe_allow_html=True
                 )
+
                 v = st.text_input(
                     "",
-                    key=f"cell_{r}_{c}",
+                    key=key,
                     max_chars=1,
                     label_visibility="collapsed",
                     placeholder=" ",
                     help="1〜9の数字を入力"
                 )
+
                 st.markdown("</div>", unsafe_allow_html=True)
 
             # 入力チェック
@@ -122,20 +116,10 @@ def show_solution(board):
         for c in range(9):
 
             style = ""
-            if r % 3 == 0:
-                style += "border-top: 3px solid black;"
-            else:
-                style += "border-top: 1px solid #999;"
-
-            if c % 3 == 0:
-                style += "border-left: 3px solid black;"
-            else:
-                style += "border-left: 1px solid #999;"
-
-            if r == 8:
-                style += "border-bottom: 3px solid black;"
-            if c == 8:
-                style += "border-right: 3px solid black;"
+            style += "border-top: {} solid black;".format("3px" if r % 3 == 0 else "1px")
+            style += "border-left: {} solid black;".format("3px" if c % 3 == 0 else "1px")
+            style += "border-bottom: {} solid black;".format("3px" if r == 8 else "1px")
+            style += "border-right: {} solid black;".format("3px" if c == 8 else "1px")
 
             with cols[c]:
                 st.markdown(
@@ -149,7 +133,7 @@ def show_solution(board):
 # メイン
 # -------------------------
 def main():
-    st.title("🧩 Sudoku Solver（UI強化版）")
+    st.title("🧩 Sudoku Solver（セル完全囲み罫線版）")
 
     board = input_board()
 
