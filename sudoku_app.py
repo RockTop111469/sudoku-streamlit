@@ -1,148 +1,69 @@
 import streamlit as st
 import numpy as np
 
-# -------------------------
-# 数独ソルバー
-# -------------------------
-def find_empty(board):
-    for r in range(9):
-        for c in range(9):
-            if board[r][c] == 0:
-                return r, c
-    return None
-
-def is_valid(board, num, pos):
-    r, c = pos
-    if num in board[r]: return False
-    if num in board[:, c]: return False
-    br, bc = (r//3)*3, (c//3)*3
-    if num in board[br:br+3, bc:bc+3]: return False
-    return True
-
-def solve_sudoku(board):
-    empty = find_empty(board)
-    if not empty:
-        return True
-    r, c = empty
-    for num in range(1, 10):
-        if is_valid(board, num, (r, c)):
-            board[r][c] = num
-            if solve_sudoku(board):
-                return True
-            board[r][c] = 0
-    return False
-
-
-# -------------------------
-# 入力UI（セル完全囲み罫線）
-# -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄は0）")
 
-    board = np.zeros((9, 9), dtype=int)
-
-    # CSS（セルを完全に囲む）
+    # CSS（完全に囲まれたセル）
     st.markdown("""
         <style>
-        .cell-wrapper {
-            position: relative;
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 45px);
+            grid-template-rows: repeat(9, 45px);
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .sudoku-cell {
             width: 45px;
             height: 45px;
-        }
-        .cell-input input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 45px !important;
-            height: 45px !important;
             text-align: center;
             font-size: 22px;
-            padding: 0;
-            border: none;
-            background: transparent;
+            border: 1px solid #999;
         }
+        /* 3×3 の太線 */
+        .cell-r0 { border-top: 3px solid black !important; }
+        .cell-r3 { border-top: 3px solid black !important; }
+        .cell-r6 { border-top: 3px solid black !important; }
+        .cell-c0 { border-left: 3px solid black !important; }
+        .cell-c3 { border-left: 3px solid black !important; }
+        .cell-c6 { border-left: 3px solid black !important; }
+        .cell-r8 { border-bottom: 3px solid black !important; }
+        .cell-c8 { border-right: 3px solid black !important; }
         </style>
     """, unsafe_allow_html=True)
 
+    # HTML 生成
+    html = "<div class='sudoku-grid'>"
     for r in range(9):
-        cols = st.columns(9, gap="small")
         for c in range(9):
+            classes = f"sudoku-cell cell-r{r} cell-c{c}"
+            html += f"<input id='cell_{r}_{c}' class='{classes}' maxlength='1'>"
+    html += "</div>"
 
-            # 枠線の太さ
-            style = ""
-            style += "border-top: {} solid black;".format("3px" if r % 3 == 0 else "1px")
-            style += "border-left: {} solid black;".format("3px" if c % 3 == 0 else "1px")
-            style += "border-bottom: {} solid black;".format("3px" if r == 8 else "1px")
-            style += "border-right: {} solid black;".format("3px" if c == 8 else "1px")
+    st.markdown(html, unsafe_allow_html=True)
 
+    # JS で値を session_state に反映
+    st.markdown("""
+        <script>
+        const inputs = document.querySelectorAll('.sudoku-cell');
+        inputs.forEach(inp => {
+            inp.addEventListener('input', () => {
+                const key = inp.id;
+                const value = inp.value;
+                window.parent.postMessage({key: key, value: value}, '*');
+            });
+        });
+        </script>
+    """, unsafe_allow_html=True)
+
+    # Python 側で受け取る
+    board = np.zeros((9, 9), dtype=int)
+    for r in range(9):
+        for c in range(9):
             key = f"cell_{r}_{c}"
-
-            with cols[c]:
-                # 枠線つきの箱
-                st.markdown(
-                    f"<div class='cell-wrapper' style='{style}'>",
-                    unsafe_allow_html=True
-                )
-
-                # 中に text_input を絶対配置（key は1回だけ！）
-                v = st.text_input(
-                    "",
-                    key=key,
-                    max_chars=1,
-                    label_visibility="collapsed",
-                    placeholder=" "
-                )
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            # 入力チェック
+            v = st.session_state.get(key, "")
             if v.isdigit() and 1 <= int(v) <= 9:
                 board[r][c] = int(v)
-            else:
-                board[r][c] = 0
 
     return board
-
-
-# -------------------------
-# 解答表示（同じ罫線で表示）
-# -------------------------
-def show_solution(board):
-    st.write("### ✔ 解答:")
-
-    for r in range(9):
-        cols = st.columns(9, gap="small")
-        for c in range(9):
-
-            style = ""
-            style += "border-top: {} solid black;".format("3px" if r % 3 == 0 else "1px")
-            style += "border-left: {} solid black;".format("3px" if c % 3 == 0 else "1px")
-            style += "border-bottom: {} solid black;".format("3px" if r == 8 else "1px")
-            style += "border-right: {} solid black;".format("3px" if c == 8 else "1px")
-
-            with cols[c]:
-                st.markdown(
-                    f"<div style='{style}; text-align:center; font-size:22px; padding-top:8px;'>"
-                    f"<b>{board[r][c]}</b></div>",
-                    unsafe_allow_html=True
-                )
-
-
-# -------------------------
-# メイン
-# -------------------------
-def main():
-    st.title("🧩 Sudoku Solver（セル完全囲み罫線版）")
-
-    board = input_board()
-
-    if st.button("Solve"):
-        board_copy = board.copy()
-        if solve_sudoku(board_copy):
-            show_solution(board_copy)
-        else:
-            st.error("解けませんでした。")
-
-
-if __name__ == "__main__":
-    main()
