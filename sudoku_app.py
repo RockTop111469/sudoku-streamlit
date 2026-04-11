@@ -34,7 +34,7 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（グレーセルのみ）
+# 入力UI（罫線なし・グレーセルのみ）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄は0）")
@@ -77,5 +77,50 @@ def input_board():
 
 
 # -------------------------
-# 解答表示（グレーセルで表示）
-# ----------------
+# 解答表示（罫線なし・グレーセル）
+# -------------------------
+def show_solution(board):
+    st.write("### ✔ 解答:")
+
+    st.markdown("""
+        <style>
+        .solution-cell {
+            text-align: center;
+            font-size: 22px;
+            height: 45px;
+            width: 45px;
+            padding-top: 8px;
+            border: 1px solid #ccc;
+            background-color: #f8f8f8;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    for r in range(9):
+        cols = st.columns(9, gap="small")
+        for c in range(9):
+            with cols[c]:
+                st.markdown(
+                    f"<div class='solution-cell'><b>{board[r][c]}</b></div>",
+                    unsafe_allow_html=True
+                )
+
+
+# -------------------------
+# メイン
+# -------------------------
+def main():
+    st.title("🧩 Sudoku Solver（罫線なし・グレーセル版）")
+
+    board = input_board()
+
+    if st.button("Solve"):
+        board_copy = board.copy()
+        if solve_sudoku(board_copy):
+            show_solution(board_copy)
+        else:
+            st.error("解けませんでした。")
+
+
+if __name__ == "__main__":
+    main()
