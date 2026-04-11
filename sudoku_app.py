@@ -34,13 +34,14 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（罫線なし・グレーセルのみ）
+# 入力UI（3×3 ブロック色分け）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄のままでOK）")
 
     board = np.zeros((9, 9), dtype=int)
 
+    # CSS：text_input の背景色をブロックごとに変える
     st.markdown("""
         <style>
         .sudoku-input input {
@@ -50,22 +51,39 @@ def input_board():
             width: 45px;
             padding: 0;
         }
+        .block-a input {
+            background-color: #f0f0f0 !important;  /* 薄いグレー */
+        }
+        .block-b input {
+            background-color: #ffffff !important;  /* 白 */
+        }
         </style>
     """, unsafe_allow_html=True)
 
     for r in range(9):
         cols = st.columns(9, gap="small")
         for c in range(9):
+
+            # 3×3 ブロックの色を決める
+            block_class = "block-a" if ((r//3 + c//3) % 2 == 0) else "block-b"
+
             key = f"cell_{r}_{c}"
 
-            v = cols[c].text_input(
-                "",
-                key=key,
-                max_chars=1,
-                label_visibility="collapsed",
-                placeholder=" "
-            )
+            with cols[c]:
+                # text_input をラップして CSS クラスを適用
+                st.markdown(f"<div class='sudoku-input {block_class}'>", unsafe_allow_html=True)
 
+                v = st.text_input(
+                    "",
+                    key=key,
+                    max_chars=1,
+                    label_visibility="collapsed",
+                    placeholder=" "
+                )
+
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            # 入力チェック
             if v.isdigit() and 1 <= int(v) <= 9:
                 board[r][c] = int(v)
             else:
@@ -75,7 +93,7 @@ def input_board():
 
 
 # -------------------------
-# 解答表示（グレーセル）
+# 解答表示（同じ色分け）
 # -------------------------
 def show_solution(board):
     st.write("### ✔ 解答:")
@@ -89,7 +107,12 @@ def show_solution(board):
             width: 45px;
             padding-top: 8px;
             border: 1px solid #ccc;
-            background-color: #f8f8f8;
+        }
+        .block-a {
+            background-color: #f0f0f0 !important;
+        }
+        .block-b {
+            background-color: #ffffff !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -97,9 +120,12 @@ def show_solution(board):
     for r in range(9):
         cols = st.columns(9, gap="small")
         for c in range(9):
+
+            block_class = "block-a" if ((r//3 + c//3) % 2 == 0) else "block-b"
+
             with cols[c]:
                 st.markdown(
-                    f"<div class='solution-cell'><b>{board[r][c]}</b></div>",
+                    f"<div class='solution-cell {block_class}'><b>{board[r][c]}</b></div>",
                     unsafe_allow_html=True
                 )
 
@@ -108,7 +134,7 @@ def show_solution(board):
 # メイン
 # -------------------------
 def main():
-    st.title("🧩 Sudoku Solver（グレーセル版）")
+    st.title("🧩 Sudoku Solver（3×3 色分け版）")
 
     board = input_board()
 
