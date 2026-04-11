@@ -147,7 +147,7 @@ def show_solution(board):
 # メイン
 # -------------------------
 def main():
-    st.title("🧩 ろっくとっぷ　のナンプレSolver）")
+    st.title("🧩 ろっくとっぷ　のナンプレSolver")
 
     board = input_board()
 
