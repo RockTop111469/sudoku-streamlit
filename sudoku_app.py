@@ -13,12 +13,12 @@ def find_empty(board):
 
 def is_valid(board, num, pos):
     r, c = pos
-    if num in board[r]: 
+    if num in board[r]:
         return False
-    if num in board[:, c]: 
+    if num in board[:, c]:
         return False
-    br, bc = (r//3)*3, (c//3)*3
-    if num in board[br:br+3, bc:bc+3]: 
+    br, bc = (r // 3) * 3, (c // 3) * 3
+    if num in board[br:br+3, bc:bc+3]:
         return False
     return True
 
@@ -37,96 +37,49 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（HTML input → JS → Streamlit）
+# 入力UI（テキスト方式）
 # -------------------------
 def input_board():
-    st.write("### 数独の盤面を入力してください（空欄のままでOK）")
+    st.write("### 数独の盤面を入力してください（0 は空欄）")
 
+    default_text = "\n".join([
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+        "||000|000|000||000|000|000||000|000|000||",
+    ])
+
+    text = st.text_area("盤面を編集してください", default_text, height=300)
+
+    # 9×9 の board に変換
     board = np.zeros((9, 9), dtype=int)
 
-    # ★ CSS（あなたの指定どおり）
-    st.markdown("""
-        <style>
-        pre {
-            font-family: monospace;
-            font-size: 26px;
-            line-height: 1.35;
-        }
-        .cell {
-            display: inline-block;
-            width: 36px;
-            height: 36px;
-            position: relative;
-        }
-        .cell input {
-            width: 36px;
-            height: 36px;
-            font-size: 26px;
-            text-align: center;
-            background: transparent;
-            border: none;
-            outline: none;
-        }
-        @media (max-width: 600px) {
-            pre {
-                font-size: 22px;
-            }
-            .cell {
-                width: 30px;
-                height: 30px;
-            }
-            .cell input {
-                width: 30px;
-                height: 30px;
-                font-size: 22px;
-            }
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    lines = text.strip().split("\n")
+    if len(lines) != 9:
+        st.error("行数が9行ではありません")
+        return board
 
-    # ★ HTML（パイプ固定）
-    html = "<pre>"
     for r in range(9):
-        html += "||"
+        line = lines[r].replace("|", "")
+        if len(line) != 27:
+            st.error(f"{r+1} 行目の文字数が正しくありません")
+            return board
+
         for c in range(9):
-            key = f"cell_{r}_{c}"
-            html += f"<span class='cell'><input id='{key}' maxlength='1'></span>|"
-            if c % 3 == 2:
-                html += "|"
-        html += "|\n"
-    html += "</pre>"
-
-    st.markdown(html, unsafe_allow_html=True)
-
-    # ★ JavaScript → Streamlit に値を送る
-    st.markdown("""
-        <script>
-        const sendValues = () => {
-            let data = {};
-            for (let r = 0; r < 9; r++) {
-                for (let c = 0; c < 9; c++) {
-                    let key = `cell_${r}_${c}`;
-                    let v = document.getElementById(key).value;
-                    data[key] = v;
-                }
-            }
-            window.parent.postMessage({type: "streamlit:setComponentValue", value: data}, "*");
-        };
-
-        document.addEventListener("input", sendValues);
-        </script>
-    """, unsafe_allow_html=True)
-
-    # ★ Streamlit 側で JS からの値を受け取る
-    values = st.experimental_get_query_params()
-
-    # ★ board に反映
-    for r in range(9):
-        for c in range(9):
-            key = f"cell_{r}_{c}"
-            v = values.get(key, [""])[0]
-            if v.isdigit() and 1 <= int(v) <= 9:
-                board[r][c] = int(v)
+            v = line[c*3:(c*3)+3]  # 例: "000" or "005"
+            try:
+                num = int(v)
+                if 1 <= num <= 9:
+                    board[r][c] = num
+                else:
+                    board[r][c] = 0
+            except:
+                board[r][c] = 0
 
     return board
 
@@ -137,44 +90,16 @@ def input_board():
 def show_solution(board):
     st.write("### ✔ 解答:")
 
-    st.markdown("""
-        <style>
-        pre {
-            font-family: monospace;
-            font-size: 26px;
-            line-height: 1.35;
-        }
-        .cell {
-            display: inline-block;
-            width: 36px;
-            height: 36px;
-            font-size: 26px;
-            text-align: center;
-        }
-        @media (max-width: 600px) {
-            pre {
-                font-size: 22px;
-            }
-            .cell {
-                width: 30px;
-                height: 30px;
-                font-size: 22px;
-            }
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    html = "<pre>"
+    out = ""
     for r in range(9):
-        html += "||"
+        out += "||"
         for c in range(9):
-            html += f"<span class='cell'>{board[r][c]}</span>|"
+            out += f"{board[r][c]:03d}|"
             if c % 3 == 2:
-                html += "|"
-        html += "|\n"
-    html += "</pre>"
+                out += "|"
+        out += "|\n"
 
-    st.markdown(html, unsafe_allow_html=True)
+    st.text(out)
 
 
 # -------------------------
