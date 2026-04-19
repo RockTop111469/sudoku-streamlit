@@ -34,7 +34,7 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（スマホ9列 / PC11列）
+# 入力UI（パイプ固定・全セル入力）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄のままでOK）")
@@ -43,137 +43,104 @@ def input_board():
 
     st.markdown("""
         <style>
-        .sudoku-input input {
+        pre {
+            font-family: monospace;
+            font-size: 20px;
+            line-height: 1.2;
+        }
+        .cell-input {
+            width: 28px;
+            height: 28px;
+            font-size: 20px;
             text-align: center;
-            font-size: 22px;
-            height: 45px;
-            width: 45px;
-            padding: 0;
         }
 
-        /* PC：スペースあり */
-        @media (min-width: 600px) {
-            .pc-space {
-                width: 20px;
-                height: 45px;
-            }
-        }
-
-        /* スマホ：スペースなし＋縮小 */
+        /* スマホ縮小 */
         @media (max-width: 600px) {
-            .pc-space {
-                width: 0px;
-                height: 0px;
-            }
-            .sudoku-input input {
-                transform: scale(0.75);
+            .cell-input {
+                transform: scale(0.8);
                 transform-origin: top left;
+            }
+            pre {
+                font-size: 16px;
             }
         }
         </style>
     """, unsafe_allow_html=True)
 
+    st.write("<pre>", unsafe_allow_html=True)
+
     for r in range(9):
-
-        # PC → 11列（スペースあり）
-        # スマホ → スペースが0pxになるので実質9列
-        cols = st.columns([1,1,1,0.3,1,1,1,0.3,1,1,1])
-
-        col_index = 0
-
+        row_html = "||"
         for c in range(9):
-
-            # 3×3 ブロックの後にスペース
-            if c in [3, 6]:
-                with cols[col_index]:
-                    st.markdown("<div class='pc-space'></div>", unsafe_allow_html=True)
-                col_index += 1
-
             key = f"cell_{r}_{c}"
+            inp = st.text_input("", key=key, max_chars=1, label_visibility="collapsed")
+            if inp.isdigit() and 1 <= int(inp) <= 9:
+                board[r][c] = int(inp)
+            row_html += f"<input class='cell-input' id='{key}' />|"
+            if c % 3 == 2:
+                row_html += "|"
+        row_html += "|"
+        st.write(row_html, unsafe_allow_html=True)
 
-            with cols[col_index]:
-                v = st.text_input(
-                    "",
-                    key=key,
-                    max_chars=1,
-                    label_visibility="collapsed",
-                    placeholder=" "
-                )
-            col_index += 1
-
-            if v.isdigit() and 1 <= int(v) <= 9:
-                board[r][c] = int(v)
-            else:
-                board[r][c] = 0
-
-        if r in [2, 5]:
-            st.write("")
+    st.write("</pre>", unsafe_allow_html=True)
 
     return board
 
 
 # -------------------------
-# 解答表示（入力と同じレイアウト）
+# 解答表示（パイプ固定）
 # -------------------------
 def show_solution(board):
     st.write("### ✔ 解答:")
 
     st.markdown("""
         <style>
-        .solution-cell {
+        pre {
+            font-family: monospace;
+            font-size: 20px;
+            line-height: 1.2;
+        }
+        .cell {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            font-size: 20px;
             text-align: center;
-            font-size: 22px;
-            height: 45px;
-            width: 45px;
-            padding-top: 8px;
             border: 1px solid #ccc;
-            background-color: #f8f8f8;
+            background: #f8f8f8;
         }
-
-        @media (min-width: 600px) {
-            .pc-space {
-                width: 20px;
-                height: 45px;
-            }
-        }
-
         @media (max-width: 600px) {
-            .pc-space {
-                width: 0px;
-                height: 0px;
+            .cell {
+                transform: scale(0.8);
+                transform-origin: top left;
+            }
+            pre {
+                font-size: 16px;
             }
         }
         </style>
     """, unsafe_allow_html=True)
 
+    st.write("<pre>", unsafe_allow_html=True)
+
     for r in range(9):
-
-        cols = st.columns([1,1,1,0.3,1,1,1,0.3,1,1,1])
-        col_index = 0
-
+        row_html = "||"
         for c in range(9):
+            row_html += f"<div class='cell'>{board[r][c]}</div>|"
+            if c % 3 == 2:
+                row_html += "|"
+        row_html += "|"
+        st.write(row_html, unsafe_allow_html=True)
 
-            if c in [3, 6]:
-                with cols[col_index]:
-                    st.markdown("<div class='pc-space'></div>", unsafe_allow_html=True)
-                col_index += 1
-
-            with cols[col_index]:
-                st.markdown(
-                    f"<div class='solution-cell'><b>{board[r][c]}</b></div>",
-                    unsafe_allow_html=True
-                )
-            col_index += 1
-
-        if r in [2, 5]:
-            st.write("")
+    st.write("</pre>", unsafe_allow_html=True)
 
 
 # -------------------------
 # メイン
 # -------------------------
 def main():
-    st.title("🧩 ろっくとっぷ　のナンプレSolver")
+    st.title("🧩 ろっくとっぷ のナンプレSolver")
 
     board = input_board()
 
