@@ -34,14 +34,13 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（3×3 ブロック間スペース版）
+# 入力UI（スマホ崩れ防止 + PC 3×3 スペース）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄のままでOK）")
 
     board = np.zeros((9, 9), dtype=int)
 
-    # text_input の見た目だけ整える
     st.markdown("""
         <style>
         .sudoku-input input {
@@ -51,26 +50,43 @@ def input_board():
             width: 45px;
             padding: 0;
         }
-        .space-cell {
-            height: 45px;
-            width: 20px;   /* ブロック間のスペース */
+
+        /* PC 用：スペースあり */
+        @media (min-width: 600px) {
+            .pc-space {
+                width: 20px;
+                height: 45px;
+            }
+        }
+
+        /* スマホ用：スペースなし（幅0にする）＋セル縮小 */
+        @media (max-width: 600px) {
+            .pc-space {
+                width: 0px;
+                height: 0px;
+            }
+            .sudoku-input input {
+                transform: scale(0.8);
+                transform-origin: top left;
+            }
         }
         </style>
     """, unsafe_allow_html=True)
 
     for r in range(9):
 
-        # 9セル + 2スペース = 11列
+        # PC → 11列（スペースあり）
+        # スマホ → スペースが 0px になるので実質 9列
         cols = st.columns([1,1,1,0.3,1,1,1,0.3,1,1,1])
 
         col_index = 0
 
         for c in range(9):
 
-            # 3×3 ブロックの後にスペースを入れる
+            # 3×3 ブロックの後にスペース
             if c in [3, 6]:
                 with cols[col_index]:
-                    st.markdown("<div class='space-cell'></div>", unsafe_allow_html=True)
+                    st.markdown("<div class='pc-space'></div>", unsafe_allow_html=True)
                 col_index += 1
 
             key = f"cell_{r}_{c}"
@@ -90,15 +106,14 @@ def input_board():
             else:
                 board[r][c] = 0
 
-        # 3×3 ブロックの縦スペース
         if r in [2, 5]:
-            st.write("")  # 空行でスペースを作る
+            st.write("")
 
     return board
 
 
 # -------------------------
-# 解答表示（3×3 ブロック間スペース版）
+# 解答表示（入力と同じレイアウト）
 # -------------------------
 def show_solution(board):
     st.write("### ✔ 解答:")
@@ -114,9 +129,19 @@ def show_solution(board):
             border: 1px solid #ccc;
             background-color: #f8f8f8;
         }
-        .space-cell {
-            height: 45px;
-            width: 20px;
+
+        @media (min-width: 600px) {
+            .pc-space {
+                width: 20px;
+                height: 45px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .pc-space {
+                width: 0px;
+                height: 0px;
+            }
         }
         </style>
     """, unsafe_allow_html=True)
@@ -130,7 +155,7 @@ def show_solution(board):
 
             if c in [3, 6]:
                 with cols[col_index]:
-                    st.markdown("<div class='space-cell'></div>", unsafe_allow_html=True)
+                    st.markdown("<div class='pc-space'></div>", unsafe_allow_html=True)
                 col_index += 1
 
             with cols[col_index]:
@@ -142,6 +167,7 @@ def show_solution(board):
 
         if r in [2, 5]:
             st.write("")
+
 
 # -------------------------
 # メイン
