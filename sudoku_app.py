@@ -37,27 +37,35 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（9行×9桁テキスト）
+# 入力UI（画像＋入力例＋9行テキスト）
 # -------------------------
 def input_board():
-    st.write("### 数独の盤面を入力してください")
-    st.write("- 9行×9桁で入力してください")
-    st.write("- `0` は空欄として扱います")
-    st.write("- 数字は `1〜9` のみ有効です")
+    st.write("### 数独の盤面を入力してください（0 は空欄）")
 
-    st.markdown("**＜入力例＞**")
-    example = "\n".join([
-        "000000046",
-        "000000000",
-        "001230000",
-        "002007000",
-        "003000500",
-        "000405090",
-        "000010300",
-        "400006000",
-        "900000000",
-    ])
-    st.code(example, language="text")
+    # --- 画像と入力例を横並びに ---
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.write("**＜問題画像＞**")
+        st.image("example.png", caption="この画像を数字に変換します")
+
+    with col2:
+        st.write("**＜入力例＞**")
+        example = "\n".join([
+            "000000046",
+            "000000000",
+            "001230000",
+            "002007000",
+            "003000500",
+            "000405090",
+            "000010300",
+            "400006000",
+            "900000000",
+        ])
+        st.code(example, language="text")
+
+    st.write("---")
+    st.write("**9 行 × 9 桁で入力してください（0 は空欄）**")
 
     default_text = "\n".join([
         "000000000",
@@ -71,8 +79,9 @@ def input_board():
         "000000000",
     ])
 
-    text = st.text_area("盤面（9行×9桁）", default_text, height=220)
+    text = st.text_area("盤面入力", default_text, height=220)
 
+    # --- 入力チェック ---
     lines = [line.strip() for line in text.strip().split("\n") if line.strip() != ""]
     board = np.zeros((9, 9), dtype=int)
 
@@ -83,7 +92,7 @@ def input_board():
     for r in range(9):
         line = lines[r]
         if len(line) != 9:
-            st.error(f"{r+1}行目の桁数が9ではありません。9桁で入力してください。")
+            st.error(f"{r+1} 行目が 9 桁ではありません。")
             return None
         for c in range(9):
             ch = line[c]
@@ -96,10 +105,10 @@ def input_board():
 
 
 # -------------------------
-# 解答表示（9行×9桁で出力）
+# 解答表示（9行×9桁）
 # -------------------------
 def show_solution(board):
-    st.write("### ✔ 解答（9行×9桁）")
+    st.write("### ✔ 解答（9 行 × 9 桁）")
 
     lines = []
     for r in range(9):
