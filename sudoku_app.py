@@ -37,7 +37,7 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（パイプ固定・数字だけ編集可能）
+# 入力UI（パイプ固定 × 数字だけ入力）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（0 は空欄）")
@@ -45,29 +45,38 @@ def input_board():
     board = np.zeros((9, 9), dtype=int)
 
     for r in range(9):
-        cols = st.columns([0.3,1,1,1,0.3,1,1,1,0.3,1,1,1,0.3])
-
-        col = 0
-        cols[col].write("||"); col += 1
+        row_html = "|| "
+        inputs = []
 
         for c in range(9):
             key = f"cell_{r}_{c}"
-            v = cols[col].text_input("", key=key, max_chars=1, label_visibility="collapsed")
-            col += 1
+            v = st.text_input(
+                key=key,
+                label="",
+                max_chars=1,
+                placeholder="0",
+                label_visibility="collapsed"
+            )
+            inputs.append(v)
 
+            row_html += f"[{key}] | "
+            if c % 3 == 2:
+                row_html += "| "
+
+        # パイプ行を表示
+        st.markdown(
+            row_html.replace("[", "<span style='display:inline-block;width:0px;'>")
+                    .replace("]", "</span>"),
+            unsafe_allow_html=True
+        )
+
+        # 数値を board に反映
+        for c in range(9):
+            v = inputs[c]
             if v.isdigit() and 1 <= int(v) <= 9:
                 board[r][c] = int(v)
             else:
                 board[r][c] = 0
-
-            cols[col].write("|")
-            col += 1
-
-            if c % 3 == 2:
-                cols[col].write("|")
-                col += 1
-
-        cols[col-1].write("|")
 
     return board
 
@@ -78,24 +87,16 @@ def input_board():
 def show_solution(board):
     st.write("### ✔ 解答:")
 
+    out = ""
     for r in range(9):
-        cols = st.columns([0.3,1,1,1,0.3,1,1,1,0.3,1,1,1,0.3])
-
-        col = 0
-        cols[col].write("||"); col += 1
-
+        out += "|| "
         for c in range(9):
-            cols[col].write(f"**{board[r][c]}**")
-            col += 1
-
-            cols[col].write("|")
-            col += 1
-
+            out += f"{board[r][c]} | "
             if c % 3 == 2:
-                cols[col].write("|")
-                col += 1
+                out += "| "
+        out += "\n"
 
-        cols[col-1].write("|")
+    st.text(out)
 
 
 # -------------------------
