@@ -37,61 +37,58 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（パイプ風レイアウト＋text_input）
+# 入力UI（9行×9桁テキスト）
 # -------------------------
 def input_board():
-    st.write("### 数独の盤面を入力してください（空欄または0は空欄扱い）")
+    st.write("### 数独の盤面を入力してください")
+    st.write("- 9行×9桁で入力してください")
+    st.write("- `0` は空欄として扱います")
+    st.write("- 数字は `1〜9` のみ有効です")
 
+    st.markdown("**＜入力例＞**")
+    example = "\n".join([
+        "000000046",
+        "000000000",
+        "001230000",
+        "002007000",
+        "003000500",
+        "000405090",
+        "000010300",
+        "400006000",
+        "900000000",
+    ])
+    st.code(example, language="text")
+
+    default_text = "\n".join([
+        "000000000",
+        "000000000",
+        "000000000",
+        "000000000",
+        "000000000",
+        "000000000",
+        "000000000",
+        "000000000",
+        "000000000",
+    ])
+
+    text = st.text_area("盤面（9行×9桁）", default_text, height=220)
+
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip() != ""]
     board = np.zeros((9, 9), dtype=int)
 
-    st.markdown("""
-        <style>
-        .s-cell input {
-            text-align: center;
-            font-size: 24px;
-            height: 40px;
-            width: 40px;
-            padding: 0;
-        }
-        @media (max-width: 600px) {
-            .s-cell input {
-                font-size: 20px;
-                height: 34px;
-                width: 34px;
-            }
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    if len(lines) != 9:
+        st.error("行数が9行ではありません。9行で入力してください。")
+        return None
 
     for r in range(9):
-        cols = st.columns([0.4,1,0.2,1,0.2,1,0.4,1,0.2,1,0.2,1,0.4])
-
-        col_idx = 0
-        cols[col_idx].markdown("**||**"); col_idx += 1
-
+        line = lines[r]
+        if len(line) != 9:
+            st.error(f"{r+1}行目の桁数が9ではありません。9桁で入力してください。")
+            return None
         for c in range(9):
-            with cols[col_idx]:
-                v = st.text_input(
-                    "",
-                    key=f"cell_{r}_{c}",
-                    max_chars=1,
-                    label_visibility="collapsed",
-                    placeholder="",
-                )
-            col_idx += 1
-
-            # 区切りパイプ
-            cols[col_idx].markdown("**|**")
-            col_idx += 1
-
-            # 3マスごとに太い区切り
-            if c % 3 == 2:
-                cols[col_idx].markdown("**|**")
-                col_idx += 1
-
-            # 値を board に反映
-            if v.isdigit() and 1 <= int(v) <= 9:
-                board[r][c] = int(v)
+            ch = line[c]
+            if ch.isdigit() and ch != "0":
+                board[r][c] = int(ch)
             else:
                 board[r][c] = 0
 
@@ -99,37 +96,33 @@ def input_board():
 
 
 # -------------------------
-# 解答表示（パイプ付きで表示）
+# 解答表示（9行×9桁で出力）
 # -------------------------
 def show_solution(board):
-    st.write("### ✔ 解答:")
+    st.write("### ✔ 解答（9行×9桁）")
 
-    out = ""
+    lines = []
     for r in range(9):
-        out += "||"
-        for c in range(9):
-            out += f"{board[r][c]}|"
-            if c % 3 == 2:
-                out += "|"
-        out += "|\n"
+        line = "".join(str(board[r][c]) for c in range(9))
+        lines.append(line)
 
-    st.text(out)
+    st.code("\n".join(lines), language="text")
 
 
 # -------------------------
 # メイン
 # -------------------------
 def main():
-    st.title("🧩 ろっくとっぷ のナンプレSolver")
+    st.title("🧩 ろっくとっぷ のナンプレ Solver")
 
     board = input_board()
 
-    if st.button("Solve"):
+    if board is not None and st.button("Solve"):
         board_copy = board.copy()
         if solve_sudoku(board_copy):
             show_solution(board_copy)
         else:
-            st.error("解けませんでした。")
+            st.error("解けませんでした。入力に矛盾がある可能性があります。")
 
 if __name__ == "__main__":
     main()
