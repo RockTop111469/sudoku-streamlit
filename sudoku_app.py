@@ -34,7 +34,7 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（スマホ崩れ防止 + PC 3×3 スペース）
+# 入力UI（スマホ9列 / PC11列）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄のままでOK）")
@@ -51,7 +51,7 @@ def input_board():
             padding: 0;
         }
 
-        /* PC 用：スペースあり */
+        /* PC：スペースあり */
         @media (min-width: 600px) {
             .pc-space {
                 width: 20px;
@@ -59,14 +59,14 @@ def input_board():
             }
         }
 
-        /* スマホ用：スペースなし（幅0にする）＋セル縮小 */
+        /* スマホ：スペースなし＋縮小 */
         @media (max-width: 600px) {
             .pc-space {
                 width: 0px;
                 height: 0px;
             }
             .sudoku-input input {
-                transform: scale(0.8);
+                transform: scale(0.75);
                 transform-origin: top left;
             }
         }
@@ -76,7 +76,7 @@ def input_board():
     for r in range(9):
 
         # PC → 11列（スペースあり）
-        # スマホ → スペースが 0px になるので実質 9列
+        # スマホ → スペースが0pxになるので実質9列
         cols = st.columns([1,1,1,0.3,1,1,1,0.3,1,1,1])
 
         col_index = 0
