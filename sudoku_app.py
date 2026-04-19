@@ -37,49 +37,37 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（テキスト方式）
+# 入力UI（パイプ固定・数字だけ編集可能）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（0 は空欄）")
 
-    default_text = "\n".join([
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-        "||000|000|000||000|000|000||000|000|000||",
-    ])
-
-    text = st.text_area("盤面を編集してください", default_text, height=300)
-
-    # 9×9 の board に変換
     board = np.zeros((9, 9), dtype=int)
 
-    lines = text.strip().split("\n")
-    if len(lines) != 9:
-        st.error("行数が9行ではありません")
-        return board
-
     for r in range(9):
-        line = lines[r].replace("|", "")
-        if len(line) != 27:
-            st.error(f"{r+1} 行目の文字数が正しくありません")
-            return board
+        cols = st.columns([0.3,1,1,1,0.3,1,1,1,0.3,1,1,1,0.3])
+
+        col = 0
+        cols[col].write("||"); col += 1
 
         for c in range(9):
-            v = line[c*3:(c*3)+3]  # 例: "000" or "005"
-            try:
-                num = int(v)
-                if 1 <= num <= 9:
-                    board[r][c] = num
-                else:
-                    board[r][c] = 0
-            except:
+            key = f"cell_{r}_{c}"
+            v = cols[col].text_input("", key=key, max_chars=1, label_visibility="collapsed")
+            col += 1
+
+            if v.isdigit() and 1 <= int(v) <= 9:
+                board[r][c] = int(v)
+            else:
                 board[r][c] = 0
+
+            cols[col].write("|")
+            col += 1
+
+            if c % 3 == 2:
+                cols[col].write("|")
+                col += 1
+
+        cols[col-1].write("|")
 
     return board
 
@@ -90,16 +78,24 @@ def input_board():
 def show_solution(board):
     st.write("### ✔ 解答:")
 
-    out = ""
     for r in range(9):
-        out += "||"
-        for c in range(9):
-            out += f"{board[r][c]:03d}|"
-            if c % 3 == 2:
-                out += "|"
-        out += "|\n"
+        cols = st.columns([0.3,1,1,1,0.3,1,1,1,0.3,1,1,1,0.3])
 
-    st.text(out)
+        col = 0
+        cols[col].write("||"); col += 1
+
+        for c in range(9):
+            cols[col].write(f"**{board[r][c]}**")
+            col += 1
+
+            cols[col].write("|")
+            col += 1
+
+            if c % 3 == 2:
+                cols[col].write("|")
+                col += 1
+
+        cols[col-1].write("|")
 
 
 # -------------------------
