@@ -13,12 +13,12 @@ def find_empty(board):
 
 def is_valid(board, num, pos):
     r, c = pos
-    if num in board[r]: 
+    if num in board[r]:
         return False
-    if num in board[:, c]: 
+    if num in board[:, c]:
         return False
-    br, bc = (r//3)*3, (c//3)*3
-    if num in board[br:br+3, bc:bc+3]: 
+    br, bc = (r // 3) * 3, (c // 3) * 3
+    if num in board[br:br+3, bc:bc+3]:
         return False
     return True
 
@@ -37,128 +37,83 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（パイプ固定 × 全セル入力 × セル大きめ）
+# 入力UI（パイプ風レイアウト＋text_input）
 # -------------------------
 def input_board():
-    st.write("### 数独の盤面を入力してください（空欄のままでOK）")
+    st.write("### 数独の盤面を入力してください（空欄または0は空欄扱い）")
 
     board = np.zeros((9, 9), dtype=int)
 
-    # ★ あなたが渡してくれた CSS を完全統合 ★
     st.markdown("""
         <style>
-        pre {
-            font-family: monospace;
-            font-size: 26px;   /* ← 行全体の文字サイズアップ */
-            line-height: 1.35;
-        }
-
-        .cell {
-            display: inline-block;
-            width: 36px;      /* ← PC で大きく */
-            height: 36px;
-            position: relative;
-        }
-
-        .cell input {
-            width: 36px;      /* ← 入力欄も大きく */
-            height: 36px;
-            font-size: 26px;  /* ← 数字も大きく */
+        .s-cell input {
             text-align: center;
-            background: transparent;
-            border: none;
-            outline: none;
+            font-size: 24px;
+            height: 40px;
+            width: 40px;
+            padding: 0;
         }
-
-        /* スマホ縮小 */
         @media (max-width: 600px) {
-            pre {
-                font-size: 22px;   /* ← スマホでも見やすく */
-            }
-            .cell {
-                width: 30px;       /* ← スマホ用サイズ */
-                height: 30px;
-            }
-            .cell input {
-                width: 30px;
-                height: 30px;
-                font-size: 22px;
+            .s-cell input {
+                font-size: 20px;
+                height: 34px;
+                width: 34px;
             }
         }
         </style>
     """, unsafe_allow_html=True)
 
-    st.write("<pre>", unsafe_allow_html=True)
-
-    # ★ パイプ固定レイアウトに input を直接埋め込む ★
     for r in range(9):
-        row_html = "||"
+        cols = st.columns([0.4,1,0.2,1,0.2,1,0.4,1,0.2,1,0.2,1,0.4])
+
+        col_idx = 0
+        cols[col_idx].markdown("**||**"); col_idx += 1
+
         for c in range(9):
-            key = f"cell_{r}_{c}"
-            row_html += f"<span class='cell'><input name='{key}'></span>|"
+            with cols[col_idx]:
+                v = st.text_input(
+                    "",
+                    key=f"cell_{r}_{c}",
+                    max_chars=1,
+                    label_visibility="collapsed",
+                    placeholder="",
+                )
+            col_idx += 1
+
+            # 区切りパイプ
+            cols[col_idx].markdown("**|**")
+            col_idx += 1
+
+            # 3マスごとに太い区切り
             if c % 3 == 2:
-                row_html += "|"
-        row_html += "|"
-        st.write(row_html, unsafe_allow_html=True)
+                cols[col_idx].markdown("**|**")
+                col_idx += 1
 
-    st.write("</pre>", unsafe_allow_html=True)
-
-    # ★ 入力値を Python 側に反映
-    for r in range(9):
-        for c in range(9):
-            key = f"cell_{r}_{c}"
-            v = st.session_state.get(key, "")
+            # 値を board に反映
             if v.isdigit() and 1 <= int(v) <= 9:
                 board[r][c] = int(v)
+            else:
+                board[r][c] = 0
 
     return board
 
 
 # -------------------------
-# 解答表示（パイプ固定 × セル大きめ）
+# 解答表示（パイプ付きで表示）
 # -------------------------
 def show_solution(board):
     st.write("### ✔ 解答:")
 
-    st.markdown("""
-        <style>
-        pre {
-            font-family: monospace;
-            font-size: 26px;
-            line-height: 1.35;
-        }
-        .cell {
-            display: inline-block;
-            width: 36px;
-            height: 36px;
-            font-size: 26px;
-            text-align: center;
-        }
-        @media (max-width: 600px) {
-            pre {
-                font-size: 22px;
-            }
-            .cell {
-                width: 30px;
-                height: 30px;
-                font-size: 22px;
-            }
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    st.write("<pre>", unsafe_allow_html=True)
-
+    out = ""
     for r in range(9):
-        row_html = "||"
+        out += "||"
         for c in range(9):
-            row_html += f"<span class='cell'>{board[r][c]}</span>|"
+            out += f"{board[r][c]}|"
             if c % 3 == 2:
-                row_html += "|"
-        row_html += "|"
-        st.write(row_html, unsafe_allow_html=True)
+                out += "|"
+        out += "|\n"
 
-    st.write("</pre>", unsafe_allow_html=True)
+    st.text(out)
 
 
 # -------------------------
