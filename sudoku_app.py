@@ -34,7 +34,7 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（透明入力欄 × パイプ固定）
+# 入力UI（パイプの間に直接 input を埋め込む）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄のままでOK）")
@@ -49,17 +49,14 @@ def input_board():
             line-height: 1.3;
         }
 
-        .cell-wrap {
+        .cell {
             display: inline-block;
-            position: relative;
             width: 24px;
             height: 24px;
+            position: relative;
         }
 
-        .cell-input {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .cell input {
             width: 24px;
             height: 24px;
             font-size: 20px;
@@ -74,11 +71,11 @@ def input_board():
             pre {
                 font-size: 18px;
             }
-            .cell-wrap {
+            .cell {
                 width: 20px;
                 height: 20px;
             }
-            .cell-input {
+            .cell input {
                 width: 20px;
                 height: 20px;
                 font-size: 16px;
@@ -93,7 +90,7 @@ def input_board():
         row_html = "||"
         for c in range(9):
             key = f"cell_{r}_{c}"
-            row_html += f"<span class='cell-wrap'>___<input class='cell-input' name='{key}'></span>|"
+            row_html += f"<span class='cell'><input name='{key}'></span>|"
             if c % 3 == 2:
                 row_html += "|"
         row_html += "|"
@@ -113,7 +110,7 @@ def input_board():
 
 
 # -------------------------
-# 解答表示（透明セルなし）
+# 解答表示（パイプ固定）
 # -------------------------
 def show_solution(board):
     st.write("### ✔ 解答:")
