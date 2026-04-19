@@ -37,46 +37,42 @@ def solve_sudoku(board):
 
 
 # -------------------------
-# 入力UI（パイプ固定 × 全セル入力 × セル大きめ）
+# 入力UI（HTML input → JS → Streamlit）
 # -------------------------
 def input_board():
     st.write("### 数独の盤面を入力してください（空欄のままでOK）")
 
     board = np.zeros((9, 9), dtype=int)
 
-    # ★ あなたが渡してくれた CSS を完全統合 ★
+    # ★ CSS（あなたの指定どおり）
     st.markdown("""
         <style>
         pre {
             font-family: monospace;
-            font-size: 26px;   /* ← 行全体の文字サイズアップ */
+            font-size: 26px;
             line-height: 1.35;
         }
-
         .cell {
             display: inline-block;
-            width: 36px;      /* ← PC で大きく */
+            width: 36px;
             height: 36px;
             position: relative;
         }
-
         .cell input {
-            width: 36px;      /* ← 入力欄も大きく */
+            width: 36px;
             height: 36px;
-            font-size: 26px;  /* ← 数字も大きく */
+            font-size: 26px;
             text-align: center;
             background: transparent;
             border: none;
             outline: none;
         }
-
-        /* スマホ縮小 */
         @media (max-width: 600px) {
             pre {
-                font-size: 22px;   /* ← スマホでも見やすく */
+                font-size: 22px;
             }
             .cell {
-                width: 30px;       /* ← スマホ用サイズ */
+                width: 30px;
                 height: 30px;
             }
             .cell input {
@@ -88,26 +84,47 @@ def input_board():
         </style>
     """, unsafe_allow_html=True)
 
-    st.write("<pre>", unsafe_allow_html=True)
-
-    # ★ パイプ固定レイアウトに input を直接埋め込む ★
+    # ★ HTML（パイプ固定）
+    html = "<pre>"
     for r in range(9):
-        row_html = "||"
+        html += "||"
         for c in range(9):
             key = f"cell_{r}_{c}"
-            row_html += f"<span class='cell'><input name='{key}'></span>|"
+            html += f"<span class='cell'><input id='{key}' maxlength='1'></span>|"
             if c % 3 == 2:
-                row_html += "|"
-        row_html += "|"
-        st.write(row_html, unsafe_allow_html=True)
+                html += "|"
+        html += "|\n"
+    html += "</pre>"
 
-    st.write("</pre>", unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
 
-    # ★ 入力値を Python 側に反映
+    # ★ JavaScript → Streamlit に値を送る
+    st.markdown("""
+        <script>
+        const sendValues = () => {
+            let data = {};
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    let key = `cell_${r}_${c}`;
+                    let v = document.getElementById(key).value;
+                    data[key] = v;
+                }
+            }
+            window.parent.postMessage({type: "streamlit:setComponentValue", value: data}, "*");
+        };
+
+        document.addEventListener("input", sendValues);
+        </script>
+    """, unsafe_allow_html=True)
+
+    # ★ Streamlit 側で JS からの値を受け取る
+    values = st.experimental_get_query_params()
+
+    # ★ board に反映
     for r in range(9):
         for c in range(9):
             key = f"cell_{r}_{c}"
-            v = st.session_state.get(key, "")
+            v = values.get(key, [""])[0]
             if v.isdigit() and 1 <= int(v) <= 9:
                 board[r][c] = int(v)
 
@@ -115,7 +132,7 @@ def input_board():
 
 
 # -------------------------
-# 解答表示（パイプ固定 × セル大きめ）
+# 解答表示
 # -------------------------
 def show_solution(board):
     st.write("### ✔ 解答:")
@@ -147,18 +164,17 @@ def show_solution(board):
         </style>
     """, unsafe_allow_html=True)
 
-    st.write("<pre>", unsafe_allow_html=True)
-
+    html = "<pre>"
     for r in range(9):
-        row_html = "||"
+        html += "||"
         for c in range(9):
-            row_html += f"<span class='cell'>{board[r][c]}</span>|"
+            html += f"<span class='cell'>{board[r][c]}</span>|"
             if c % 3 == 2:
-                row_html += "|"
-        row_html += "|"
-        st.write(row_html, unsafe_allow_html=True)
+                html += "|"
+        html += "|\n"
+    html += "</pre>"
 
-    st.write("</pre>", unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
 
 
 # -------------------------
